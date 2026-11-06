@@ -1,40 +1,38 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db');
 
-const musicSchema = new mongoose.Schema({
+const Music = sequelize.define('Music', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+    },
     title: {
-        type: String,
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     },
     artist: {
-        type: String,
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     },
     category: {
-        type: String,
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     },
     url: {
-        type: String,
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     },
     duration: {
-        type: String,
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     },
     imageUrl: {
-        type: String,
-        default: ''
+        type: DataTypes.STRING,
+        allowNull: true
     }
 }, {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    timestamps: true
 });
-
-musicSchema.virtual('id').get(function () {
-    return this._id.toHexString();
-});
-
-const Music = mongoose.model('Music', musicSchema);
 
 module.exports = Music;

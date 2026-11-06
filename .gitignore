@@ -16,3 +16,4 @@ backend/database.sqlite
 sanet/
 backend/server_log.txt
 frontend/agent_test.txt
+test_com_delete.txt

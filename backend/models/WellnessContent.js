@@ -1,49 +1,46 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db');
 
-const wellnessSchema = new mongoose.Schema({
+const WellnessContent = sequelize.define('WellnessContent', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+    },
     title: {
-        type: String,
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     },
     description: {
-        type: String,
-        required: true
+        type: DataTypes.TEXT,
+        allowNull: false
     },
     type: {
-        type: String,
-        enum: ['meditation', 'music', 'breathing', 'affirmation', 'video'],
-        required: true
+        type: DataTypes.ENUM('meditation', 'music', 'breathing', 'affirmation', 'video'),
+        allowNull: false
     },
     duration: {
-        type: String,
+        type: DataTypes.STRING,
         allowNull: true
     },
     audioUrl: {
-        type: String,
-        default: ''
+        type: DataTypes.STRING,
+        defaultValue: ''
     },
     imageUrl: {
-        type: String,
-        default: ''
+        type: DataTypes.STRING,
+        defaultValue: ''
     },
     category: {
-        type: String,
-        default: 'general'
+        type: DataTypes.STRING,
+        defaultValue: 'general'
     },
     tags: {
-        type: [String],
-        default: []
+        type: DataTypes.TEXT, // Store as JSON string in SQLite
+        defaultValue: '[]'
     }
 }, {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    timestamps: true
 });
-
-wellnessSchema.virtual('id').get(function () {
-    return this._id.toHexString();
-});
-
-const WellnessContent = mongoose.model('WellnessContent', wellnessSchema);
 
 module.exports = WellnessContent;

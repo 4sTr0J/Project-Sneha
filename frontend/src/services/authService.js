@@ -20,15 +20,6 @@ export const authService = {
     },
 
     async verifyToken() {
-        const token = localStorage.getItem('token');
-        if (token === 'demo-token') {
-            const saved = localStorage.getItem('user');
-            try {
-                return saved ? JSON.parse(saved) : { id: 'demo-user', name: 'Guest User', email: 'guest@example.com' };
-            } catch {
-                return { id: 'demo-user', name: 'Guest User', email: 'guest@example.com' };
-            }
-        }
         const response = await api.get('/auth/me');
         return response.data;
     },

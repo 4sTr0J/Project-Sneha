@@ -3,15 +3,14 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
+      - main
       - test
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,24 +21,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build Website
+      - name: Install dependencies
         run: |
           cd frontend
           npm install
+
+      - name: Build Website
+        run: |
+          cd frontend
           npm run build
 
-      - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: './frontend/dist'
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+          folder: frontend/dist
+          branch: gh-pages

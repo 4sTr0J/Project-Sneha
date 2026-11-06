@@ -13,3 +13,6 @@ backend/database.sqlite
 *.png
 *.jpg
 *.jpeg
+sanet/
+backend/server_log.txt
+frontend/agent_test.txt

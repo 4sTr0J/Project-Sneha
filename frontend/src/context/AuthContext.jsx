@@ -4,8 +4,15 @@ import { authService } from '../services/authService';
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(() => {
+        const saved = localStorage.getItem('user');
+        try {
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         checkAuth();
@@ -13,13 +20,24 @@ export function AuthProvider({ children }) {
 
     const checkAuth = async () => {
         const token = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
         if (token) {
+            if (token === 'demo-token' && savedUser) {
+                try {
+                    setUser(JSON.parse(savedUser));
+                    setLoading(false);
+                    return;
+                } catch (e) {}
+            }
             try {
                 const userData = await authService.verifyToken();
                 setUser(userData);
             } catch (error) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                if (token !== 'demo-token') {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setUser(null);
+                }
             }
         }
         setLoading(false);
@@ -29,6 +47,20 @@ export function AuthProvider({ children }) {
         const data = await authService.login(email, password);
         setUser(data);
         return data;
+    };
+
+    const guestLogin = () => {
+        const mockUser = {
+            id: 'demo-user',
+            _id: 'demo-user',
+            name: 'Guest User',
+            email: 'guest@example.com',
+            token: 'demo-token'
+        };
+        localStorage.setItem('token', mockUser.token);
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        setUser(mockUser);
+        return mockUser;
     };
 
     const register = async (userData) => {
@@ -49,7 +81,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
+        <AuthContext.Provider value={{ user, loading, login, guestLogin, register, logout, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

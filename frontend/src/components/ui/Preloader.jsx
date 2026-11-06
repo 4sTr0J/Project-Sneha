@@ -29,9 +29,21 @@ const Preloader = ({ onComplete }) => {
         };
 
         logoImg.onload = checkLoaded;
+        logoImg.onerror = checkLoaded;
         heartImg.onload = checkLoaded;
+        heartImg.onerror = checkLoaded;
         logoImg.src = logo;
         heartImg.src = heart;
+
+        // Safety timeout - if images take too long or fail, proceed anyway
+        const safetyTimeout = setTimeout(() => {
+            if (imagesLoaded < 2) {
+                imagesLoaded = 2;
+                initParticles();
+                animate();
+                startSequence();
+            }
+        }, 5000);
 
         const initParticles = () => {
             const width = canvas.width;

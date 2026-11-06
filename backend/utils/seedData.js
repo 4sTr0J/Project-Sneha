@@ -1,8 +1,11 @@
-const { WellnessContent, User } = require('../models');
-const sequelize = require('../config/db');
+const { WellnessContent, User, Community } = require('../models');
+const { connectDB } = require('../config/db');
+const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
+
+dotenv.config();
 
 const wellnessData = [
-    // Relaxation Music
     {
         title: "Weightless",
         description: "Ambient, Soft Instrumental, Scientific relaxation tones",
@@ -11,7 +14,7 @@ const wellnessData = [
         category: "Relaxation",
         audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
         imageUrl: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=500&h=300&fit=crop",
-        tags: JSON.stringify(["ambient", "instrumental", "scientific"])
+        tags: ["ambient", "instrumental", "scientific"]
     },
     {
         title: "Watermark - Enya",
@@ -21,7 +24,7 @@ const wellnessData = [
         category: "Relaxation",
         audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
         imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&h=300&fit=crop",
-        tags: JSON.stringify(["vocals", "ambient", "enya"])
+        tags: ["vocals", "ambient", "enya"]
     },
     {
         title: "Strawberry Swing",
@@ -31,9 +34,8 @@ const wellnessData = [
         category: "Relaxation",
         audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
         imageUrl: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500&h=300&fit=crop",
-        tags: JSON.stringify(["chill", "pop", "feel-good"])
+        tags: ["chill", "pop", "feel-good"]
     },
-    // Guided Meditation
     {
         title: "Morning Meditation",
         description: "Start your day with positive energy",
@@ -42,7 +44,7 @@ const wellnessData = [
         category: "Beginner",
         audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
         imageUrl: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
-        tags: JSON.stringify(["morning", "energy", "beginner"])
+        tags: ["morning", "energy", "beginner"]
     },
     {
         title: "Mindful Breathing",
@@ -52,7 +54,7 @@ const wellnessData = [
         category: "All Levels",
         audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
         imageUrl: "https://images.unsplash.com/photo-1499729132352-4a341c0e3932?w=800&q=80",
-        tags: JSON.stringify(["breathing", "mindful", "presence"])
+        tags: ["breathing", "mindful", "presence"]
     },
     {
         title: "Body Relaxation",
@@ -62,7 +64,7 @@ const wellnessData = [
         category: "General",
         audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
         imageUrl: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
-        tags: JSON.stringify(["relaxation", "calm", "nature"])
+        tags: ["relaxation", "calm", "nature"]
     },
     {
         title: "Daily Affirmations",
@@ -72,9 +74,8 @@ const wellnessData = [
         category: "Positive Thinking",
         audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
         imageUrl: "https://images.unsplash.com/photo-1502139214073-47f67554332c?w=800&q=80",
-        tags: JSON.stringify(["affirmation", "positive", "daily"])
+        tags: ["affirmation", "positive", "daily"]
     },
-    // NEW: Guided Meditation Video
     {
         title: "Guided Meditation Video",
         description: "A complete visual meditation for peace and clarity",
@@ -83,7 +84,7 @@ const wellnessData = [
         category: "Guided Video",
         audioUrl: "https://www.youtube.com/embed/uTN29kj7e-w",
         imageUrl: "https://img.youtube.com/vi/uTN29kj7e-w/maxresdefault.jpg",
-        tags: JSON.stringify(["video", "guided", "peace", "youtube"])
+        tags: ["video", "guided", "peace", "youtube"]
     }
 ];
 
@@ -155,18 +156,21 @@ const communityData = [
 
 const seedDatabase = async () => {
     try {
-        await sequelize.sync({ force: true });
-        console.log('Database synced');
+        await connectDB();
+        console.log('Connected to MongoDB');
 
-        await WellnessContent.bulkCreate(wellnessData);
+        // Clear existing data
+        await WellnessContent.deleteMany({});
+        await Community.deleteMany({});
+        await User.deleteMany({});
+        console.log('Cleared existing data');
+
+        await WellnessContent.insertMany(wellnessData);
         console.log(`${wellnessData.length} wellness items created`);
 
-        const { Community } = require('../models');
-        await Community.bulkCreate(communityData);
+        await Community.insertMany(communityData);
         console.log(`${communityData.length} community groups created`);
 
-        // Create default user
-        const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash('password123', 10);
 
         await User.create({

@@ -1,38 +1,44 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+const mongoose = require('mongoose');
 
-const Community = sequelize.define('Community', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const communitySchema = new mongoose.Schema({
     name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     description: {
-        type: DataTypes.TEXT,
-        allowNull: false
+        type: String,
+        required: true
     },
     illnessType: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     memberCount: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
+        type: Number,
+        default: 0
     },
     imageUrl: {
-        type: DataTypes.STRING,
-        defaultValue: ''
+        type: String,
+        default: ''
     },
     isPrivate: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-    }
+        type: Boolean,
+        default: false
+    },
+    members: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+communitySchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+const Community = mongoose.model('Community', communitySchema);
 
 module.exports = Community;

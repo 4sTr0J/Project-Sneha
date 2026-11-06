@@ -2,16 +2,36 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { Community, User } = require('../models');
+const { sequelize } = require('../config/db');
+
+// @desc    Community root
+// @route   GET /api/community
+// @access  Private
+router.get('/', protect, async (req, res) => {
+    try {
+        const [groups] = await sequelize.query('SELECT * FROM Communities ORDER BY memberCount DESC');
+        res.json(groups || []);
+    } catch (e) {
+        res.json([]);
+    }
+});
 
 // @desc    Get all support groups
 // @route   GET /api/community/groups
 // @access  Private
 router.get('/groups', protect, async (req, res) => {
     try {
-        const groups = await Community.findAll({
-            order: [['memberCount', 'DESC']]
-        });
-        res.json(groups);
+        try {
+            const groups = await Community.find().sort({ memberCount: -1 });
+            if (groups && groups.length > 0) {
+                return res.json(groups);
+            }
+        } catch (mErr) {
+            // Fallback to SQLite
+        }
+
+        const [groups] = await sequelize.query('SELECT * FROM Communities ORDER BY memberCount DESC');
+        res.json(groups || []);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -22,12 +42,21 @@ router.get('/groups', protect, async (req, res) => {
 // @access  Private
 router.get('/groups/:id', protect, async (req, res) => {
     try {
-        const group = await Community.findByPk(req.params.id, {
-            include: [{ model: User, as: 'members', attributes: ['id', 'name', 'avatar'] }]
+        try {
+            const group = await Community.findById(req.params.id).populate('members', 'name avatar');
+            if (group) {
+                return res.json(group);
+            }
+        } catch (mErr) {
+            // Fallback to SQLite
+        }
+
+        const [results] = await sequelize.query('SELECT * FROM Communities WHERE id = ?', {
+            replacements: [req.params.id]
         });
 
-        if (group) {
-            res.json(group);
+        if (results && results.length > 0) {
+            res.json(results[0]);
         } else {
             res.status(404).json({ message: 'Group not found' });
         }
@@ -41,27 +70,28 @@ router.get('/groups/:id', protect, async (req, res) => {
 // @access  Private
 router.post('/groups/:id/join', protect, async (req, res) => {
     try {
-        const group = await Community.findByPk(req.params.id);
-        const user = await User.findByPk(req.user.id);
+        const group = await Community.findById(req.params.id);
 
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        const isMember = await group.hasMember(user);
+        const isMember = group.members.includes(req.user.id);
+        const user = await User.findById(req.user.id);
 
         if (isMember) {
             // Leave group
-            await group.removeMember(user);
+            group.members = group.members.filter(id => id.toString() !== req.user.id.toString());
+            user.groups = user.groups.filter(id => id.toString() !== group.id.toString());
         } else {
             // Join group
-            await group.addMember(user);
+            group.members.push(req.user.id);
+            user.groups.push(group.id);
         }
 
-        // Update member count manually as memberCount is a field
-        const members = await group.getMembers();
-        group.memberCount = members.length;
+        group.memberCount = group.members.length;
         await group.save();
+        await user.save();
 
         res.json({
             group,
@@ -77,13 +107,10 @@ router.post('/groups/:id/join', protect, async (req, res) => {
 // @access  Private
 router.get('/groups/:id/members', protect, async (req, res) => {
     try {
-        const group = await Community.findByPk(req.params.id);
+        const group = await Community.findById(req.params.id).populate('members', 'name avatar illnessType');
 
         if (group) {
-            const members = await group.getMembers({
-                attributes: ['id', 'name', 'avatar', 'illnessType']
-            });
-            res.json(members);
+            res.json(group.members);
         } else {
             res.status(404).json({ message: 'Group not found' });
         }

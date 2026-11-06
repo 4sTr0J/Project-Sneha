@@ -1,42 +1,45 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+const mongoose = require('mongoose');
 
-const Mood = sequelize.define('Mood', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const moodSchema = new mongoose.Schema({
     userId: {
-        type: DataTypes.UUID,
-        allowNull: false
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     mood: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     note: {
-        type: DataTypes.TEXT,
-        allowNull: true
+        type: String,
+        default: ''
     },
     intensity: {
-        type: DataTypes.INTEGER,
-        defaultValue: 5
+        type: Number,
+        default: 5
     },
     activities: {
-        type: DataTypes.JSON,
-        defaultValue: []
+        type: [String],
+        default: []
     },
     date: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     time: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+moodSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+const Mood = mongoose.model('Mood', moodSchema);
 
 module.exports = Mood;

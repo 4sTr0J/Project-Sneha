@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { login } = useAuth();
+    const { login, guestLogin } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -150,14 +150,7 @@ export default function Login() {
                         whileTap={{ scale: 0.98 }}
                         type="button"
                         onClick={() => {
-                            const mockUser = {
-                                id: 'demo-user',
-                                name: 'Guest User',
-                                email: 'guest@example.com',
-                                token: 'demo-token'
-                            };
-                            localStorage.setItem('token', mockUser.token);
-                            localStorage.setItem('user', JSON.stringify(mockUser));
+                            guestLogin();
                             navigate('/dashboard');
                         }}
                         className="btn"

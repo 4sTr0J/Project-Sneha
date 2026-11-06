@@ -1,46 +1,55 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+const mongoose = require('mongoose');
 
-const User = sequelize.define('User', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const userSchema = new mongoose.Schema({
     name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-        validate: {
-            isEmail: true
-        }
+        type: String,
+        required: true,
+        unique: true
     },
     password: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     supportType: {
-        type: DataTypes.ENUM('Cancer Support', 'Chronic Illness', 'Caregiver Support'),
-        allowNull: true
+        type: String,
+        enum: ['Cancer Support', 'Chronic Illness', 'Caregiver Support'],
+        default: null
     },
     avatar: {
-        type: DataTypes.STRING,
-        defaultValue: ''
+        type: String,
+        default: ''
     },
     bio: {
-        type: DataTypes.STRING,
-        defaultValue: ''
+        type: String,
+        default: ''
     },
     illnessType: {
-        type: DataTypes.STRING,
-        defaultValue: ''
-    }
+        type: String,
+        default: ''
+    },
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'WellnessContent'
+    }],
+    groups: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Community'
+    }]
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+// For compatibility with frontend that might expect .id instead of ._id
+userSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;

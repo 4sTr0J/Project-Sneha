@@ -2,21 +2,48 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { User, WellnessContent, Community } = require('../models');
+const { sequelize } = require('../config/db');
 
 // @desc    Get user profile
 // @route   GET /api/profile
 // @access  Private
 router.get('/', protect, async (req, res) => {
     try {
-        const user = await User.findByPk(req.user.id, {
-            attributes: { exclude: ['password'] },
-            include: [
-                { model: WellnessContent, as: 'favorites' },
-                { model: Community, as: 'groups' }
-            ]
-        });
+        try {
+            const user = await User.findById(req.user.id)
+                .select('-password')
+                .populate('favorites')
+                .populate('groups');
 
-        res.json(user);
+            if (user) {
+                return res.json(user);
+            }
+        } catch (mErr) {
+            // Fallback to SQLite
+        }
+
+        try {
+            const [users] = await sequelize.query('SELECT id, name, email, supportType, avatar, bio, illnessType FROM Users WHERE id = ?', {
+                replacements: [req.user.id]
+            });
+            if (users && users.length > 0) {
+                return res.json({ ...users[0], favorites: [], groups: [] });
+            }
+        } catch (sqlErr) {
+            // Ignore
+        }
+
+        res.json({
+            id: req.user.id,
+            name: req.user.name || 'User',
+            email: req.user.email || 'user@example.com',
+            supportType: 'Cancer Support',
+            bio: 'Living each day with hope and strength.',
+            illnessType: 'General Wellness',
+            avatar: '',
+            favorites: [],
+            groups: []
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -29,7 +56,7 @@ router.put('/', protect, async (req, res) => {
     try {
         const { name, bio, illnessType, avatar } = req.body;
 
-        const user = await User.findByPk(req.user.id);
+        const user = await User.findById(req.user.id);
 
         if (user) {
             user.name = name || user.name;

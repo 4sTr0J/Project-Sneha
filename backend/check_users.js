@@ -1,11 +1,11 @@
 const { User } = require('./models');
-const sequelize = require('./config/db');
+const { connectDB } = require('./config/db');
 
 async function checkUsers() {
     try {
-        await sequelize.authenticate();
-        const users = await User.findAll({ attributes: ['id', 'name', 'email'] });
-        console.log('Users in database:');
+        await connectDB();
+        const users = await User.find({}, 'name email');
+        console.log('Users in MongoDB:');
         console.log(JSON.stringify(users, null, 2));
         process.exit(0);
     } catch (error) {
